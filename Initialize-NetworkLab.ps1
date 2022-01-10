@@ -283,7 +283,6 @@ function Install-VCLib
             }
             $result
         } 
-        c
         
         $result | Where-Object -Property filename -Match $filter 
         }
