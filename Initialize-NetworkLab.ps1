@@ -283,7 +283,7 @@ function Install-VCLib
             }
             $result
         } 
-        
+        c
         
         $result | Where-Object -Property filename -Match $filter 
         }
@@ -556,8 +556,8 @@ try
     $iperfFile = Get-WebFile -URI $iperfURL -savePath $labFiles -fileName iperf.zip
     Expand-Archive -Path $iperfFile -DestinationPath $labFiles -Force -EA SilentlyContinue
     $iperfDir = Get-ChildItem $labFiles -Directory -Filter "iperf*"
-    Move-Item "$iperfDir\*" $labFiles -Force
-    $null = Remove-Item $iperfDir -Force
+    Move-Item "$($iperfDir.FullName)\*" $labFiles -Force
+    $null = Remove-Item $($iperfDir.FullName) -Force
     $null = Remove-Item $iperfFile -Force
     New-NetFirewallRule -DisplayName "iPerf (TCP-In)" -Name "iperf_tcp_in" -Description "Allows iPerf traffic." -Program "$labFiles\iperf3.exe" -Direction Inbound -Protocol TCP -Action Allow
 }
@@ -571,7 +571,7 @@ catch
 try 
 {
     $npcapFile = Get-WebFile -URI $npcapURL -savePath $labFiles -fileName npcap.exe
-    Start-Process .\npcap.exe -ArgumentList "/winpcap_mode=disabled" -Wait
+    Start-Process "$labFiles\npcap.exe" -ArgumentList "/winpcap_mode=disabled" -Wait
 
     $null = Remove-Item $npcapFile -Force
 }
@@ -584,6 +584,4 @@ catch
 Install-PackageProvider -Name NuGet -Force
 Install-Module -Name PSWindowsUpdate -MinimumVersion 2.2.0 -Force
 Get-WindowsUpdate -AcceptAll -Verbose -WindowsUpdate -Install -AutoReboot
-
-# reboot if Get-WindowsUpdate did not
-Restart-Computer -Force
+#Restart-Computer -Force
