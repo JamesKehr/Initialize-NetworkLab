@@ -20,7 +20,7 @@ Use these commands to setup the RX (reciever) computer.
 ```PowerShell
 iwr https://raw.githubusercontent.com/JamesKehr/Initialize-NetworkLab/main/Initialize-NetworkLab.ps1 -OutFile "$ENV:USERPROFILE\Desktop\Initialize-NetworkLab.ps1"
 Set-Location "$ENV:USERPROFILE\Desktop"
-.\Initialize-NetworkLab.ps1 -RX
+.\Initialize-NetworkLab.ps1 -RX [-DnsServer <DNS Server IP>]
 ```
 
 ## TX Setup
@@ -30,5 +30,5 @@ Use these commands to setup the TX (transmit) computer.
 ```PowerShell
 iwr https://raw.githubusercontent.com/JamesKehr/Initialize-NetworkLab/main/Initialize-NetworkLab.ps1 -OutFile "$ENV:USERPROFILE\Desktop\Initialize-NetworkLab.ps1"
 Set-Location "$ENV:USERPROFILE\Desktop"
-.\Initialize-NetworkLab.ps1 -TX
+.\Initialize-NetworkLab.ps1 -TX [-DnsServer <DNS Server IP>]
 ```
