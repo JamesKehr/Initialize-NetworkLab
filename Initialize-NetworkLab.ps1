@@ -12,7 +12,7 @@ param (
 
     [Parameter()]
     [string[]]
-    $DnsServer = "192.168.1.60"
+    $DnsServer = "192.168.1.1"
 )
 
 ### FUNCTIONS ###
