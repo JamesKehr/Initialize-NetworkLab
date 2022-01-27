@@ -1,5 +1,19 @@
 # setup lab system
 
+[CmdletBinding()]
+param (
+    [Parameter()]
+    [switch]
+    $RX,
+
+    [Parameter()]
+    [switch]
+    $TX,
+
+    [Parameter()]
+    [string[]]
+    $DnsServer = "192.168.1.60"
+)
 
 ### FUNCTIONS ###
 #region
@@ -316,6 +330,69 @@ function Install-VCLib
 ### CONSTANTS ###
 #region
 
+if ($TX.IsPresent)
+{
+    # rename the computer
+    Rename-Computer -NewName GEARS-RX
+
+    # look for the BLUE adapter
+    $blueNIC = Get-NetAdapter BLUE -EA SilentlyContinue
+    if ($blueNIC)
+    {
+        $blueIP = Get-NetIPAddress -InterfaceAlias BLUE -AddressFamily IPv4
+
+        if ($blueIP.SuffixOrigin -ne "Manual")
+        {
+            New-NetIPAddress -InterfaceAlias BLUE -AddressFamily IPv4 -IPAddress 10.2.0.2 -PrefixLength 24 -DefaultGateway 10.2.0.1
+            Set-DnsClientServerAddress -InterfaceAlias BLUE -ServerAddresses $DnsServer
+        }
+    }
+
+    # look for the GREEN adapter
+    $greenNIC = Get-NetAdapter GREEN -EA SilentlyContinue
+    if ($greenNIC)
+    {
+        $greenIP = Get-NetIPAddress -InterfaceAlias GREEN -AddressFamily IPv4 -EA SilentlyContinue
+
+        if ($greenIP.SuffixOrigin -ne "Manual")
+        {
+            New-NetIPAddress -InterfaceAlias GREEN -AddressFamily IPv4 -IPAddress 10.3.0.2 -PrefixLength 24
+        }
+    }
+
+}
+elseif ($RX.IsPresent) 
+{
+    # rename the computer
+    Rename-Computer -NewName GEARS-RX
+
+    # look for the RED adapter
+    $redNIC = Get-NetAdapter RED -EA SilentlyContinue
+    if ($redNIC)
+    {
+        $redIP = Get-NetIPAddress -InterfaceAlias RED -AddressFamily IPv4 -EA SilentlyContinue
+
+        if ($redIP.SuffixOrigin -ne "Manual")
+        {
+            New-NetIPAddress -InterfaceAlias RED -AddressFamily IPv4 -IPAddress 10.1.0.2 -PrefixLength 24 -DefaultGateway 10.1.0.1
+            Set-DnsClientServerAddress -InterfaceAlias BLUE -ServerAddresses $DnsServer
+        }
+    }
+
+    # look for the GREEN adapter
+    $greenNIC = Get-NetAdapter GREEN -EA SilentlyContinue
+    if ($greenNIC)
+    {
+        $greenIP = Get-NetIPAddress -InterfaceAlias GREEN -AddressFamily IPv4
+
+        if ($greenIP.SuffixOrigin -ne "Manual")
+        {
+            New-NetIPAddress -InterfaceAlias GREEN -AddressFamily IPv4 -IPAddress 10.3.0.1 -PrefixLength 24
+        }
+    }
+}
+
+
 # where to put downloads
 $savePath = "C:\Temp"
 
@@ -617,4 +694,4 @@ catch
 Install-PackageProvider -Name NuGet -Force
 Install-Module -Name PSWindowsUpdate -MinimumVersion 2.2.0 -Force
 Get-WindowsUpdate -AcceptAll -Verbose -WindowsUpdate -Install -AutoReboot
-#Restart-Computer -Force
+Restart-Computer -Force
