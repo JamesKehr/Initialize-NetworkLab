@@ -389,15 +389,15 @@ try
 
     $licenseFile = Get-WebFile -URI $URL2 -savePath $savePath -fileName $fileName2 -EA Stop
 
-    Add-AppxProvisionedPackage -Online -PackagePath $installFile -LicensePath $licenseFile -Verbose
+    Add-AppxProvisionedPackage -Online -PackagePath $installFile -LicensePath $licenseFile -Verbose -EA Stop
 }
 catch
 {
-    return (Write-Error "PowerShell download failed: $_" -EA Stop)
+    return (Write-Error "Winget download failed: $_" -EA Stop)
 }
 
 ## install winget apps ##
-$wingetFnd = Get-Command winget.exe -EA SilentlyContinue
+
 if ($wingetFnd)
 {
     foreach ($app in $wingetApps)
@@ -405,6 +405,10 @@ if ($wingetFnd)
         # install things
         winget install $app --exact --accept-package-agreements --accept-source-agreements --silent
     }
+}
+else
+{
+    return (Write-Error "Winget installation failed: Winget not found" -EA Stop)
 }
 
 
