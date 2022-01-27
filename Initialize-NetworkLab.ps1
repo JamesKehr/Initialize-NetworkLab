@@ -187,13 +187,11 @@ function Install-FromGithub
     }
 }
 
-
 function Get-InstalledFonts
 {
     [void] [System.Reflection.Assembly]::LoadWithPartialName("System.Drawing")
     return ((New-Object System.Drawing.Text.InstalledFontCollection).Families)
 }
-
 
 function Install-Font
 {
@@ -264,37 +262,40 @@ function Install-VCLib
         )
             
         process {   
+            #$Uri=$StoreLink
 
-        #$Uri=$StoreLink
-
-        $WebResponse = Invoke-WebRequest -UseBasicParsing -Method 'POST' -Uri 'https://store.rg-adguard.net/api/GetFiles' -Body "type=url&url=$Uri&ring=Retail" -ContentType 'application/x-www-form-urlencoded'
-        
-        $result = $WebResponse.Links.outerHtml | Where-Object {($_ -like '*.appx*') -or ($_ -like '*.msix*')} | Where-Object {$_ -like '*_neutral_*' -or $_ -like "*_"+$env:PROCESSOR_ARCHITECTURE.Replace("AMD","X").Replace("IA","X")+"_*"} | ForEach-Object {
-            $result = "" | Select-Object -Property filename, downloadurl
+            $WebResponse = Invoke-WebRequest -UseBasicParsing -Method 'POST' -Uri 'https://store.rg-adguard.net/api/GetFiles' -Body "type=url&url=$Uri&ring=Retail" -ContentType 'application/x-www-form-urlencoded'
             
-            if( $_ -match '(?<=rel="noreferrer">).+(?=</a>)' )
-            {
-                $result.filename = $matches.Values[0]
-            }
+            $result = $WebResponse.Links.outerHtml | Where-Object {($_ -like '*.appx*') -or ($_ -like '*.msix*')} | Where-Object {$_ -like '*_neutral_*' -or $_ -like "*_"+$env:PROCESSOR_ARCHITECTURE.Replace("AMD","X").Replace("IA","X")+"_*"} | ForEach-Object {
+                $result = "" | Select-Object -Property filename, downloadurl
+                
+                if( $_ -match '(?<=rel="noreferrer">).+(?=</a>)' )
+                {
+                    $result.filename = $matches.Values[0]
+                }
 
-            if( $_ -match '(?<=a href=").+(?=" r)' )
-            {
-                $result.downloadurl = $matches.Values[0]
-            }
-            $result
-        } 
-        
-        $result | Where-Object -Property filename -Match $filter 
+                if( $_ -match '(?<=a href=").+(?=" r)' )
+                {
+                    $result.downloadurl = $matches.Values[0]
+                }
+                $result
+            } 
+            
+            $result | Where-Object -Property filename -Match $filter 
         }
     }
 
     $package = Get-AppPackage -Uri $StoreLink  -Filter $Packagename
 
+    if ($package.downloadurl -notmatch "http://.*microsoft.com/filestreamingservice")
+    {
+        return (Write-Error "Invalid download url: $($package.downloadurl)")
+    }
+
     if(-not (Test-Path $RepoPath ))
     {
         New-Item $RepoPath -ItemType Directory -Force
     }
-
 
     if(-not (Test-Path (Join-Path $RepoPath -ChildPath $package.filename )))
     {
@@ -338,7 +339,8 @@ $fontFile = "CascadiaCode.zip"
 [string[]]$profileLines = 'Import-Module -Name Terminal-Icons',
                           'oh-my-posh --init --shell pwsh --config ~/jandedobbeleer.omp.json | Invoke-Expression',
                           'Set-PoshPrompt slimfat',
-                          'CD $env:USERPROFILE\Desktop\Scripts',
+                          'New-PSDrive -Name Lab -PSProvider FileSystem -Root $env:USERPROFILE\Desktop\Scripts\',
+                          'CD lab:',
                           'cls'
 
 # where lab files go
@@ -352,6 +354,9 @@ $iperfURL = "https://files.budman.pw/iperf3.10.1_64bit.zip"
 
 # npcap URL
 $npcapURL = "https://nmap.org/npcap/dist/npcap-1.60.exe"
+
+# TAT.Net URL
+$tatURL = "https://github.com/TextAnalysisTool/Releases/raw/master/TextAnalysisTool.NET.zip"
 
 
 #endregion CONSTANTS
@@ -578,6 +583,24 @@ catch
 {
     Write-Warning "Failed to download and install npcap. Please manually download and install: $_"
 }
+
+# get TAT.NET
+try 
+{
+    $tatFile = Get-WebFile -URI $tatURL -savePath $labFiles -fileName tat.zip
+    Expand-Archive $tatFile
+    Get-ChildItem .\tat -File | ForEach-Object { Move-Item $($_.FullName) -Force }
+
+    $null = Remove-Item $tatFile -Force
+    $null = Remove-Item .\tat -Recurse -Force
+}
+catch 
+{
+    Write-Warning "Failed to download and install TextAnalyzerTool. Please manually download and install: $_"
+}
+
+# add Open With TAT
+
 
 # update and reboot
 Install-PackageProvider -Name NuGet -Force
