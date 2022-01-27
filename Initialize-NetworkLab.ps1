@@ -330,6 +330,62 @@ function Install-VCLib
 ### CONSTANTS ###
 #region
 
+# where to put downloads
+$savePath = "C:\Temp"
+
+# list of exact winget app IDs to install
+[array]$wingetApps = "Microsoft.PowerShell", "Microsoft.WindowsTerminal", "JanDeDobbeleer.OhMyPosh", "WiresharkFoundation.Wireshark"
+
+# winget repro and file extension
+$wingetRepo = "microsoft/winget-cli"
+$wingetExt = "msixbundle"
+
+# repro for Caskaydia Cove Nerd Font
+$repoCCNF = "ryanoasis/nerd-fonts"
+
+# name of the preferred pretty font, CaskaydiaCove NF
+$fontName = "CaskaydiaCove NF"
+
+# the zip file where CC NF is in
+$fontFile = "CascadiaCode.zip"
+
+# list of commands to add to the PowerShell profile
+[string[]]$profileLines = 'Import-Module -Name Terminal-Icons',
+                          'oh-my-posh --init --shell pwsh --config ~/jandedobbeleer.omp.json | Invoke-Expression',
+                          'Set-PoshPrompt slimfat',
+                          'New-PSDrive -Name Lab -PSProvider FileSystem -Root $env:USERPROFILE\Desktop\Scripts\',
+                          'CD lab:',
+                          'cls'
+
+# where lab files go
+$labFiles = "$env:USERPROFILE\Desktop\Scripts"
+
+# ntttcp repo
+$repoNtttcp = "microsoft/ntttcp"
+
+# iPerf download URL
+$iperfURL = "https://files.budman.pw/iperf3.10.1_64bit.zip"
+
+# npcap URL
+$npcapURL = "https://nmap.org/npcap/dist/npcap-1.60.exe"
+
+# TAT.Net URL
+$tatURL = "https://github.com/TextAnalysisTool/Releases/raw/master/TextAnalysisTool.NET.zip"
+
+# Clumsy URL
+$clumsyURL = "https://github.com/jagt/clumsy/releases/download/0.3rc4/clumsy-0.3rc4-win64-a.zip"
+
+#endregion CONSTANTS
+
+
+
+### MAIN ###
+
+$null = mkdir $savePath -EA SilentlyContinue
+$null = mkdir $env:USERPROFILE\Desktop\Scripts -EA SilentlyContinue
+
+Set-Location "$env:USERPROFILE\Desktop\Scripts"
+
 if ($TX.IsPresent)
 {
     # rename the computer
@@ -392,58 +448,6 @@ elseif ($RX.IsPresent)
     }
 }
 
-
-# where to put downloads
-$savePath = "C:\Temp"
-
-# list of exact winget app IDs to install
-[array]$wingetApps = "Microsoft.PowerShell", "Microsoft.WindowsTerminal", "JanDeDobbeleer.OhMyPosh", "WiresharkFoundation.Wireshark"
-
-# winget repro and file extension
-$wingetRepo = "microsoft/winget-cli"
-$wingetExt = "msixbundle"
-
-# repro for Caskaydia Cove Nerd Font
-$repoCCNF = "ryanoasis/nerd-fonts"
-
-# name of the preferred pretty font, CaskaydiaCove NF
-$fontName = "CaskaydiaCove NF"
-
-# the zip file where CC NF is in
-$fontFile = "CascadiaCode.zip"
-
-# list of commands to add to the PowerShell profile
-[string[]]$profileLines = 'Import-Module -Name Terminal-Icons',
-                          'oh-my-posh --init --shell pwsh --config ~/jandedobbeleer.omp.json | Invoke-Expression',
-                          'Set-PoshPrompt slimfat',
-                          'New-PSDrive -Name Lab -PSProvider FileSystem -Root $env:USERPROFILE\Desktop\Scripts\',
-                          'CD lab:',
-                          'cls'
-
-# where lab files go
-$labFiles = "$env:USERPROFILE\Desktop\Scripts"
-
-# ntttcp repo
-$repoNtttcp = "microsoft/ntttcp"
-
-# iPerf download URL
-$iperfURL = "https://files.budman.pw/iperf3.10.1_64bit.zip"
-
-# npcap URL
-$npcapURL = "https://nmap.org/npcap/dist/npcap-1.60.exe"
-
-# TAT.Net URL
-$tatURL = "https://github.com/TextAnalysisTool/Releases/raw/master/TextAnalysisTool.NET.zip"
-
-
-#endregion CONSTANTS
-
-
-
-### MAIN ###
-
-$null = mkdir $savePath -EA SilentlyContinue
-$null = mkdir $env:USERPROFILE\Desktop\Scripts -EA SilentlyContinue
 
 
 ## install winget on WS2022 ##
@@ -687,7 +691,32 @@ catch
     Write-Warning "Failed to download and install TextAnalyzerTool. Please manually download and install: $_"
 }
 
+# get clumsy
+try 
+{
+    $clumsyFile = Get-WebFile -URI $clumsyURL -savePath $labFiles -fileName clumsy.zip
+    Expand-Archive $clumsyFile
+    Get-ChildItem .\clumsy -File | ForEach-Object { Move-Item $($_.FullName) -Force }
+
+    $null = Remove-Item $clumsyFile -Force
+    $null = Remove-Item .\clumsy -Recurse -Force
+}
+catch 
+{
+    Write-Warning "Failed to download and install TextAnalyzerTool. Please manually download and install: $_"
+}
+
 # add Open With TAT
+if (-NOT (Get-PSDrive -Name HKCR -EA SilentlyContinue)) 
+{
+    New-PSDrive -Name HKCR -PSProvider Registry -Root HKEY_CLASSES_ROOT -Scope Local | Out-Null
+}
+
+$cmd = "`"$ENV:USERPROFILE\Desktop\Scripts\TextAnalysisTool.NET.exe`" `"%1`""
+$rootPath = "HKCR:\SystemFileAssociations\.txt\shell\TextAnalyzerTool.NET\Command"
+
+New-Item $rootPath -ItemType Directory -Force
+New-ItemProperty -Path $rootPath -Name "(Default)" -PropertyType String -Value $cmd
 
 
 # update and reboot
