@@ -397,6 +397,13 @@ catch
 }
 
 ## install winget apps ##
+$count = 0
+do
+{
+    Start-Sleep 1
+    $wingetFnd = Get-Command winget -EA SilentlyContinue
+    $count++
+} until ($wingetFnd -or $count -ge 10)
 
 if ($wingetFnd)
 {
@@ -408,7 +415,7 @@ if ($wingetFnd)
 }
 else
 {
-    return (Write-Error "Winget installation failed: Winget not found" -EA Stop)
+    return (Write-Error "Winget installation failed: Winget not found." -EA Stop)
 }
 
 
