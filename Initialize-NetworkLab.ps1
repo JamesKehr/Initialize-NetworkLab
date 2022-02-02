@@ -268,7 +268,7 @@ function Install-VCLib
     # modificated version. Now able to filte and return msix url's
     #
 
-    function Get-AppPackage {
+    function Get-AppVCPackage {
         [CmdletBinding()]
         param (
             [string]$Uri,
@@ -299,7 +299,7 @@ function Install-VCLib
         }
     }
 
-    $package = Get-AppPackage -Uri $StoreLink  -Filter $Packagename
+    $package = Get-AppVCPackage -Uri $StoreLink  -Filter $Packagename
 
     if ($package.downloadurl -notmatch "http://.*microsoft.com/filestreamingservice")
     {
@@ -431,7 +431,7 @@ elseif ($RX.IsPresent)
         if ($redIP.SuffixOrigin -ne "Manual")
         {
             New-NetIPAddress -InterfaceAlias RED -AddressFamily IPv4 -IPAddress 10.1.0.2 -PrefixLength 24 -DefaultGateway 10.1.0.1
-            Set-DnsClientServerAddress -InterfaceAlias BLUE -ServerAddresses $DnsServer
+            Set-DnsClientServerAddress -InterfaceAlias RED -ServerAddresses $DnsServer
         }
     }
 
@@ -477,15 +477,17 @@ catch
     return (Write-Error "Winget download failed: $_" -EA Stop)
 }
 
-## install winget apps ##
+# wait for winget to appear in the path
 $count = 0
 do
 {
     Start-Sleep 1
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User") 
     $wingetFnd = Get-Command winget -EA SilentlyContinue
     $count++
 } until ($wingetFnd -or $count -ge 10)
 
+## install winget apps ##
 if ($wingetFnd)
 {
     foreach ($app in $wingetApps)
