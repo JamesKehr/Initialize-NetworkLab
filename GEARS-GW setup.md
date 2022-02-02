@@ -62,11 +62,11 @@ In my installation the file name is 00-installer-config.yaml.
 
 Edit the YAMl file found above.
 
-	sudo nano /etc/netplan/<YAML file>
+	nano /etc/netplan/<YAML file>
 
 Example:
 
-	sudo nano /etc/netplan/00-installer-config.yaml
+	nano /etc/netplan/00-installer-config.yaml
 
 Use the arrow, home, and end keys, to position the cursor inside nano. Press enter to create a new line.
 
@@ -94,7 +94,7 @@ network:
 
 Run this command to apply the change, then press Enter to accept the new config. The last output line should read "Configuration accepted." when it works.
 
-	sudo netplan try
+	netplan try
 
 Enable IP forwarding.
 
@@ -181,10 +181,10 @@ Ctrl+x to exit, type y when prompted to save.
 
 Update file permissions and enable the service.
 
-	sudo chmod 744 /usr/local/bin/tcgui.sh
-	sudo chmod 664 /etc/systemd/system/tcgui.service
-	sudo systemctl daemon-reload
-	sudo systemctl enable tcgui.service
+	chmod 744 /usr/local/bin/tcgui.sh
+	chmod 664 /etc/systemd/system/tcgui.service
+	systemctl daemon-reload
+	systemctl enable tcgui.service
 	
 
 Reboot.
