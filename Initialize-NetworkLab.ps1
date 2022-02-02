@@ -721,6 +721,13 @@ New-Item $rootPath -ItemType Directory -Force
 New-ItemProperty -Path $rootPath -Name "(Default)" -PropertyType String -Value $cmd
 
 
+# ALL: Set all network connections to Private
+Get-NetConnectionProfile | where NetworkCategory -eq Public | Set-NetConnectionProfile -NetworkCategory Private
+
+# ALL: Enable File and Printer Sharing on the firewall for Private
+Get-NetFirewallRule -DisplayGroup "File and Printer Sharing" | Where { $_.Profile -eq "Private" -or $_.Profile -eq "Any" } | Enable-NetFirewallRule
+
+
 # update and reboot
 Install-PackageProvider -Name NuGet -Force
 Install-Module -Name PSWindowsUpdate -MinimumVersion 2.2.0 -Force
