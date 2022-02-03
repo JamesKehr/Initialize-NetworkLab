@@ -70,8 +70,11 @@ Example:
 
 Use the arrow, home, and end keys, to position the cursor inside nano. Press enter to create a new line.
 
-Edit the file so it looks like this (spacing MUST be exact!):
+Edit the file so it looks something like this (spacing MUST be exact!):
 
+- Change the name server (DNS) addresses to match your network configuration.
+- The addresses may look differnt if you setup the IPs during the Ubuntu install, and that's fine.
+- The order NICs may be different in your setup if you created all three NICs prior to Ubuntu setup. Adjust the config file accordingly.
 
 ```yaml
 network:
@@ -90,8 +93,6 @@ network:
   version: 2
 ```
 
-- Change the name server (DNS) addresses to match your network configuration.
-
 Run this command to apply the change, then press Enter to accept the new config. The last output line should read "Configuration accepted." when it works.
 
 	netplan try
@@ -99,21 +100,28 @@ Run this command to apply the change, then press Enter to accept the new config.
 Enable IP forwarding.
 
 	sysctl -w net.ipv4.ip_forward=1
+	sed -i '/net.ipv4.ip_forward/s/^#//' /etc/sysctl.conf
 	sysctl -p
 
 The sysctl command should return "net.ipv4.ip_forward = 1"
 
-
-
 Ping 10.1.0.1 from GEARS-RX to confirm the IP is reachable.
+
+```ping 10.1.0.1```
 
 Ping 10.2.0.1 from GEARS-TX when complete to confirm reachability.
 
+```ping 10.2.0.1```
+
 Ping 10.2.0.2 from GEARS-RX to confirm routing/forwarding is working.
+
+```ping 10.2.0.2```
 
 Ping 10.1.0.2 from GEARS-TX to confirm routing/forwarding is working.
 
-[optional]Enable NATing on the GW to allow Internet access.
+```ping 10.1.0.2```
+
+Enable NATing on the GW to allow Internet access.
 
 	iptables -t nat -A POSTROUTING -j MASQUERADE -o eth0
 	iptables -t nat -A POSTROUTING -j MASQUERADE -o eth1
@@ -136,13 +144,9 @@ Perform Hyper-V network tuning using these commands.
 	echo 'net.ipv4.ip_local_port_range="10240 65535"' >> /etc/sysctl.d/local.conf
 	echo 'net.ipv4.tcp_abort_on_overflow=1' >> /etc/sysctl.d/local.conf
 
-
-Download the tcgui.
+Download and setup tcgui.
 
 	git clone https://github.com/tum-lkn/tcgui.git
-
-Move the tcgui files.
-
 	mv ./tcgui /usr/local/bin/tcgui
 
 Create and edit a systemd service file.
