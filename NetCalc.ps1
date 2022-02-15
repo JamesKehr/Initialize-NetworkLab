@@ -233,7 +233,7 @@ function Convert-Sec2Sec
     {
         "s"     { return $num }
         "ms"    { return ($num * [math]::Pow(10,-3)) }
-        "µs"    { return ($num * [math]::Pow(10,-6)) }
+        "us"    { return ($num * [math]::Pow(10,-6)) }
         "ns"    { return ($num * [math]::Pow(10,-9)) }
         default { return $null}
     }
@@ -283,7 +283,7 @@ function Convert-LeftSec2RightSec
     switch ($secRightUnit) {
         "s"     { $secRight = [math]::Round($secLeft, 12) }
         "ms"    { $secRight = [math]::Round($secLeft / [math]::Pow(10,-3), 2) }
-        "µs"    { $secRight = [math]::Round($secLeft / [math]::Pow(10,-6), 2) }
+        "us"    { $secRight = [math]::Round($secLeft / [math]::Pow(10,-6), 2) }
         "ns"    { $secRight = [math]::Round($secLeft / [math]::Pow(10,-9), 2) }
         default { 
             $var_tbkBdpResults.Text = "Unknown unit: $secRightUnit"
@@ -313,7 +313,7 @@ function Convert-RightSec2LeftSec
     switch ($secLeftUnit) {
         "s"     { $secLeft = [math]::Round($secRight, 12) }
         "ms"    { $secLeft = [math]::Round($secRight / [math]::Pow(10,-3), 2) }
-        "µs"    { $secLeft = [math]::Round($secRight / [math]::Pow(10,-6), 2) }
+        "us"    { $secLeft = [math]::Round($secRight / [math]::Pow(10,-6), 2) }
         "ns"    { $secLeft = [math]::Round($secRight / [math]::Pow(10,-9), 2) }
         default { 
             $var_tbkBdpResults.Text = "Unknown unit: $secLeftUnit"
@@ -393,7 +393,7 @@ Set-Item -Path Alias:bb2b -Value Convert-Byte2Bit
                         <TextBox x:Name="tbxBdpRTT" TextWrapping="Wrap" Width="365" HorizontalAlignment="Left" VerticalAlignment="Center" FontFamily="Consolas" FontSize="24"/>
                         <ComboBox x:Name="cbxBdpRTT" Width="241" VerticalAlignment="Center" FontFamily="Consolas" FontSize="24" SelectedIndex="2">
                             <ComboBoxItem Content="ns [nanosecond]" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                            <ComboBoxItem Content="µs [microsecond]" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                            <ComboBoxItem Content="us [microsecond]" HorizontalAlignment="Left" VerticalAlignment="Center"/>
                             <ComboBoxItem Content="ms [milisecond]" HorizontalAlignment="Left" VerticalAlignment="Center"/>
                             <ComboBoxItem Content="s  [second]" HorizontalAlignment="Left" VerticalAlignment="Center"/>
                         </ComboBox>
@@ -420,7 +420,7 @@ Set-Item -Path Alias:bb2b -Value Convert-Byte2Bit
                         <TextBox x:Name="tbxMathisRtt" TextWrapping="Wrap" Width="312" VerticalAlignment="Center" FontFamily="Consolas" FontSize="24" Margin="0,18"/>
                         <ComboBox x:Name="cbxMathisRTT" Width="241" VerticalAlignment="Center" FontFamily="Consolas" FontSize="24" SelectedIndex="2">
                             <ComboBoxItem Content="ns [nanosecond]" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                            <ComboBoxItem Content="µs [microsecond]" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                            <ComboBoxItem Content="us [microsecond]" HorizontalAlignment="Left" VerticalAlignment="Center"/>
                             <ComboBoxItem Content="ms [milisecond]" HorizontalAlignment="Left" VerticalAlignment="Center"/>
                             <ComboBoxItem Content="s  [second]" HorizontalAlignment="Left" VerticalAlignment="Center"/>
                         </ComboBox>
@@ -467,7 +467,7 @@ Set-Item -Path Alias:bb2b -Value Convert-Byte2Bit
                             <TextBox x:Name="tbxConvSecLeft" TextWrapping="NoWrap" Width="125" Margin="0,10,0,56" FontFamily="Consolas" FontSize="22" VerticalAlignment="Center" Height="34" HorizontalAlignment="Left"/>
                             <ComboBox x:Name="cbxConvSecLeft" Width="241" VerticalAlignment="Center" FontFamily="Consolas" FontSize="20" SelectedIndex="2" Height="34" Margin="0,10,0,56">
                                 <ComboBoxItem Content="ns [nanosecond]" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                                <ComboBoxItem Content="µs [microsecond]" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                <ComboBoxItem Content="us [microsecond]" HorizontalAlignment="Left" VerticalAlignment="Center"/>
                                 <ComboBoxItem Content="ms [milisecond]" HorizontalAlignment="Left" VerticalAlignment="Center"/>
                                 <ComboBoxItem Content="s  [second]" HorizontalAlignment="Left" VerticalAlignment="Center"/>
                             </ComboBox>
@@ -475,7 +475,7 @@ Set-Item -Path Alias:bb2b -Value Convert-Byte2Bit
                             <TextBox x:Name="tbxConvSecRight" TextWrapping="NoWrap" Width="125" Margin="0,10,0,56" FontFamily="Consolas" FontSize="22" VerticalAlignment="Center" Height="34" HorizontalAlignment="Left"/>
                             <ComboBox x:Name="cbxConvSecRight" Width="241" VerticalAlignment="Center" FontFamily="Consolas" FontSize="20" SelectedIndex="3" Height="34" Margin="0,10,0,56" HorizontalAlignment="Left">
                                 <ComboBoxItem Content="ns [nanosecond]" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                                <ComboBoxItem Content="µs [microsecond]" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                <ComboBoxItem Content="us [microsecond]" HorizontalAlignment="Left" VerticalAlignment="Center"/>
                                 <ComboBoxItem Content="ms [milisecond]" HorizontalAlignment="Left" VerticalAlignment="Center"/>
                                 <ComboBoxItem Content="s  [second]" HorizontalAlignment="Left" VerticalAlignment="Center"/>
                             </ComboBox>
@@ -673,7 +673,7 @@ $var_btnBdpCalc.Add_Click({
                 {
                     "s"     { $result = $result }
                     "ms"    { $result = [math]::Round($result / [math]::Pow(10,-3), 2) }
-                    "µs"    { $result = [math]::Round($result / [math]::Pow(10,-6), 2) }
+                    "us"    { $result = [math]::Round($result / [math]::Pow(10,-6), 2) }
                     "ns"    { $result = [math]::Round($result / [math]::Pow(10,-9), 2) }
                     default { 
                         $var_tbkBdpResults.Text = "Unknown unit: $rttUnit"
