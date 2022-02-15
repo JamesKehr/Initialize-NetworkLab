@@ -14,7 +14,7 @@ function PreviewKeyDownDigiDot
 
     [bool]$dotBool = Invoke-Expression "`$$dot"
 
-    $var_tbkBdpResults.Text = "e.Key: $($e.Key)"
+    #$var_tbkBdpResults.Text = "e.Key: $($e.Key)"
 
     switch -Regex ($e.Key.ToString())
     {
@@ -59,7 +59,7 @@ function PreviewKeyDownDigi
     {
         "[0-9]"  { return $false }
 
-        "Back"   { $var_tbkBdpResults.Text = "result back: $($e.Text) = $($e.Key) = $result"; return $false }
+        "Back"   { return $false }
 
         "Tab"    { return $false }
 
@@ -69,7 +69,7 @@ function PreviewKeyDownDigi
 
         "Delete" { return $false }
 
-        default  { $var_tbkBdpResults.Text = "result dflt: $($e.Text) = $($e.Key) = $result"; return $true}
+        default  { return $true}
     }
 }
 
@@ -322,7 +322,7 @@ function Convert-RightSec2LeftSec
     }
     
     # set Gbps
-    $var_tbkBdpResults.Text = "$secLeft $secLeftUnit = $secRight $secRightUnit"
+    #$var_tbkBdpResults.Text = "$secLeft $secLeftUnit = $secRight $secRightUnit"
     $var_tbxConvSecLeft.Text = ($secLeft -as [decimal])
 }
 
@@ -1180,7 +1180,7 @@ $var_tbxConvBRight.Add_KeyUp({
     }
 
     $output += "3: $byte $byteUnit = $bit $bitUnit`n"
-    $var_tbkBdpResults.Text = $output
+    #$var_tbkBdpResults.Text = $output
 
     $var_tbxConvBLeft.Text = $byte
 })
