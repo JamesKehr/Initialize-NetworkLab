@@ -9,6 +9,11 @@ You can run NetCalc without saving the file to disk using this command.
 iwr https://raw.githubusercontent.com/JamesKehr/Initialize-NetworkLab/main/NetCalc.ps1 | iex
 ```
 
+_OR_
+
+```PowerShell
+iwr https://aka.ms/NetCalc | iex
+```
 
 ## Generic Setup
 

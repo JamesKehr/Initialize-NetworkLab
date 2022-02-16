@@ -1238,6 +1238,6 @@ $null = $window.ShowDialog()
 
 ##### clean up #####
 $null = $window.Close()
-$window = $null
 
+Remove-Variable window -Force
 Get-Variable -Name "var_*" -Scope Local | Remove-Variable -Force
