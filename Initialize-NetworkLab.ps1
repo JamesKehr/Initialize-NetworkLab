@@ -714,11 +714,13 @@ if (-NOT (Get-PSDrive -Name HKCR -EA SilentlyContinue))
     New-PSDrive -Name HKCR -PSProvider Registry -Root HKEY_CLASSES_ROOT -Scope Local | Out-Null
 }
 
-$cmd = "`"$ENV:USERPROFILE\Desktop\Scripts\TextAnalysisTool.NET.exe`" `"%1`""
+$tatCmd = @"
+"$ENV:USERPROFILE\Desktop\Scripts\TextAnalysisTool.NET.exe" "%1"
+"@
 $rootPath = "HKCR:\SystemFileAssociations\.txt\shell\TextAnalyzerTool.NET\Command"
 
 New-Item $rootPath -ItemType Directory -Force
-New-ItemProperty -Path $rootPath -Name "(Default)" -PropertyType String -Value $cmd
+New-ItemProperty -Path $rootPath -Name "(Default)" -PropertyType String -Value $tatCmd
 
 
 # ALL: Set all network connections to Private
