@@ -8,6 +8,10 @@ TO-DO:
 
 https://www.nuget.org/packages/Microsoft.UI.Xaml/
 
+- Find a better way to install Microsoft.VCLibs.140.00.UWPDesktop
+
+https://docs.microsoft.com/en-us/troubleshoot/cpp/c-runtime-packages-desktop-bridge
+
 #>
 
 [CmdletBinding()]
