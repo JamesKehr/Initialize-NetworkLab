@@ -1,5 +1,15 @@
 # setup lab system
 
+<#
+
+TO-DO:
+
+- Add Microsoft.UI.XAML 2.71 install, a new requirement oof installing winget.
+
+https://www.nuget.org/packages/Microsoft.UI.Xaml/
+
+#>
+
 [CmdletBinding()]
 param (
     [Parameter()]
