@@ -456,13 +456,15 @@ if ($wingetFnd)
     }
 
     # pwsh doesn't always install the first time. test and retry
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User") 
     $isPwshFnd = Get-Command pwsh -EA SilentlyContinue
 
     if (-NOT $isPwshFnd)
     {
         winget install microsoft.powershell
 
-        $isPwshFnd = Get-Command pwsh
+        $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User") 
+        $isPwshFnd = Get-Command pwsh -EA SilentlyContinue
         if (-NOT $isPwshFnd)
         {
             return (Write-Error "PowerShell 7+ installation failed. Please install manually and try again." -EA Stop)
