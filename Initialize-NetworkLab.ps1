@@ -12,6 +12,8 @@ https://www.nuget.org/packages/Microsoft.UI.Xaml/
 
 https://docs.microsoft.com/en-us/troubleshoot/cpp/c-runtime-packages-desktop-bridge
 
+https://aka.ms/Microsoft.VCLibs.x64.14.00.Desktop.appx
+
 #>
 
 [CmdletBinding()]
@@ -241,103 +243,6 @@ function Install-Font
     }
 }
 
-# https://www.andreasnick.com/112-install-winget-and-appinstaller-on-windows-server-2022.html
-function Install-VCLib
-{
-    [CmdletBinding()]
-    param (
-        [Parameter()]
-        [string]
-        $RepoLocation = $env:Temp
-    )
-
-    # make sure we don't try to use an insecure SSL/TLS protocol when downloading files
-    $secureProtocols = @() 
-    $insecureProtocols = @( [System.Net.SecurityProtocolType]::SystemDefault, 
-                            [System.Net.SecurityProtocolType]::Ssl3, 
-                            [System.Net.SecurityProtocolType]::Tls, 
-                            [System.Net.SecurityProtocolType]::Tls11) 
-    foreach ($protocol in [System.Enum]::GetValues([System.Net.SecurityProtocolType])) 
-    { 
-        if ($insecureProtocols -notcontains $protocol) 
-        { 
-            $secureProtocols += $protocol 
-        } 
-    } 
-    [System.Net.ServicePointManager]::SecurityProtocol = $secureProtocols
-
-    $StoreLink = 'https://www.microsoft.com/en-us/p/app-installer/9nblggh4nns1'
-    #$StorePackageName = 'Microsoft.VCLibs.140.00.UWPDesktop_14.0.30035.0_x64__8wekyb3d8bbwe.appx'
-
-    $RepoName = 'AppPackages'
-    #$RepoLocation = $env:Temp
-    $Packagename = 'Microsoft.VCLibs.140.00.UWPDesktop'
-    $RepoPath = Join-Path $RepoLocation -ChildPath $RepoName 
-    $RepoPath = Join-Path $RepoPath -ChildPath $Packagename
-
-    
-    #
-    # Function Source
-    # Idea from: https://serverfault.com/questions/1018220/how-do-i-install-an-app-from-windows-store-using-powershell
-    # modificated version. Now able to filte and return msix url's
-    #
-
-    function Get-AppVCPackage {
-        [CmdletBinding()]
-        param (
-            [string]$Uri,
-            [string]$Filter = '.*' #Regex
-        )
-            
-        process {   
-            #$Uri=$StoreLink
-
-            $WebResponse = Invoke-WebRequest -UseBasicParsing -Method 'POST' -Uri 'https://store.rg-adguard.net/api/GetFiles' -Body "type=url&url=$Uri&ring=Retail" -ContentType 'application/x-www-form-urlencoded'
-            
-            $result = $WebResponse.Links.outerHtml | Where-Object {($_ -like '*.appx*') -or ($_ -like '*.msix*')} | Where-Object {$_ -like '*_neutral_*' -or $_ -like "*_"+$env:PROCESSOR_ARCHITECTURE.Replace("AMD","X").Replace("IA","X")+"_*"} | ForEach-Object {
-                $result = "" | Select-Object -Property filename, downloadurl
-                
-                if( $_ -match '(?<=rel="noreferrer">).+(?=</a>)' )
-                {
-                    $result.filename = $matches.Values[0]
-                }
-
-                if( $_ -match '(?<=a href=").+(?=" r)' )
-                {
-                    $result.downloadurl = $matches.Values[0]
-                }
-                $result
-            } 
-            
-            $result | Where-Object -Property filename -Match $filter 
-        }
-    }
-
-    $package = Get-AppVCPackage -Uri $StoreLink  -Filter $Packagename
-
-    if ($package.downloadurl -notmatch "http://.*microsoft.com/filestreamingservice")
-    {
-        return (Write-Error "Invalid download url: $($package.downloadurl)")
-    }
-
-    if(-not (Test-Path $RepoPath ))
-    {
-        New-Item $RepoPath -ItemType Directory -Force
-    }
-
-    if(-not (Test-Path (Join-Path $RepoPath -ChildPath $package.filename )))
-    {
-        Invoke-WebRequest -Uri $($package.downloadurl) -OutFile (Join-Path $RepoPath -ChildPath $package.filename )
-    } else 
-    {
-        Write-Information "The file $($package.filename) already exist in the repo. Skip download"
-    }
-
-    #Install the Runtime
-    Add-AppxPackage (Join-Path $RepoPath -ChildPath $package.filename )
-}
-
-
 #endregion FUNCTIONS
 
 
@@ -388,6 +293,13 @@ $tatURL = "https://github.com/TextAnalysisTool/Releases/raw/master/TextAnalysisT
 
 # Clumsy URL
 $clumsyURL = "https://github.com/jagt/clumsy/releases/download/0.3rc4/clumsy-0.3rc4-win64-a.zip"
+
+
+# VCLib URL
+$vclibUrl = 'https://aka.ms/Microsoft.VCLibs.x64.14.00.Desktop.appx'
+
+$xamlUrl = 'https://www.nuget.org/packages/Microsoft.UI.Xaml/'
+
 
 #endregion CONSTANTS
 
@@ -465,8 +377,41 @@ elseif ($RX.IsPresent)
 
 
 ## install winget on WS2022 ##
-# install VCLiv depenency
-Install-VCLib -RepoLocation $savePath
+# install VCLib
+try
+{
+    $vclibFilename = 'Microsoft.VCLibs.x64.14.00.Desktop.appx'
+    $vclibFile = Get-WebFile -URI $vclibUrl -savePath $savePath -fileName $vclibFilename -EA Stop
+    Add-AppxPackage $vclibFile -EA Stop
+}
+catch
+{
+    return (Write-Error "VCLib download or install failed: $_" -EA Stop)
+}
+
+# install Microsoft.UI.Xaml
+$xamlPage = Invoke-WebRequest $xamlUrl -UseBasicParsing
+$xamlDlUrl = $xamlPage.Links | Where-Object { $_.outerHTML -match "outbound-manual-download" } | ForEach-Object { $_.href }
+
+try
+{
+    $xamlFilename = 'xaml.zip'
+    $xamlFile = Get-WebFile -URI $xamlDlUrl -savePath $savePath -fileName $xamlFilename -EA Stop
+    
+    Expand-Archive $xamlFile -EA Stop
+
+    # find the x64 installer
+    $xamlAppx = Get-ChildItem .\xaml -Recurse -Filter "Microsoft.UI.Xaml.*.appx" | Where-Object { $_.FullName -match "x64" }
+    
+    Add-AppxPackage $xamlAppx -EA Stop
+}
+catch
+{
+    return (Write-Error "Microsoft.UI.Xaml download or install failed: $_" -EA Stop)
+}
+
+
+
 
 # download and install winget from github
 try 
