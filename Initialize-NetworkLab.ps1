@@ -456,7 +456,7 @@ if ($wingetFnd)
     }
 
     # pwsh doesn't always install the first time. test and retry
-    $isPwshFnd = Get-Command pwsh
+    $isPwshFnd = Get-Command pwsh -EA SilentlyContinue
 
     if (-NOT $isPwshFnd)
     {
