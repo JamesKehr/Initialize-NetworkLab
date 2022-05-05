@@ -454,6 +454,21 @@ if ($wingetFnd)
         # install things
         winget install $app --exact --accept-package-agreements --accept-source-agreements --silent
     }
+
+    # pwsh doesn't always install the first time. test and retry
+    $isPwshFnd = Get-Command pwsh
+
+    if (-NOT $isPwshFnd)
+    {
+        winget install microsoft.powershell
+
+        $isPwshFnd = Get-Command pwsh
+        if (-NOT $isPwshFnd)
+        {
+            return (Write-Error "PowerShell 7+ installation failed. Please install manually and try again." -EA Stop)
+        }
+
+    }
 }
 else
 {
@@ -683,10 +698,10 @@ New-ItemProperty -Path $rootPath -Name "(Default)" -PropertyType String -Value $
 
 
 # ALL: Set all network connections to Private
-Get-NetConnectionProfile | where NetworkCategory -eq Public | Set-NetConnectionProfile -NetworkCategory Private
+Get-NetConnectionProfile | Where-Object NetworkCategory -eq Public | Set-NetConnectionProfile -NetworkCategory Private
 
 # ALL: Enable File and Printer Sharing on the firewall for Private
-Get-NetFirewallRule -DisplayGroup "File and Printer Sharing" | Where { $_.Profile -eq "Private" -or $_.Profile -eq "Any" } | Enable-NetFirewallRule
+Get-NetFirewallRule -DisplayGroup "File and Printer Sharing" | Where-Object { $_.Profile -eq "Private" -or $_.Profile -eq "Any" } | Enable-NetFirewallRule
 
 
 # update and reboot
