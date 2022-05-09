@@ -34,18 +34,17 @@ param (
 ### FUNCTIONS ###
 #region
 
-# FUNCTION: Find-GitReleaseLatest
+# FUNCTION: Find-GitRelease
 # PURPOSE:  Calls Github API to retrieve details about the latest release. Returns a PSCustomObject with repro, version (tag_name), and download URL.
-function Find-GitReleaseLatest
+function Find-GitRelease
 {
     [CmdletBinding()]
     param(
-        [string]$repo
+        [string]$Repo,
+        [switch]$Latest
     )
 
-    Write-Verbose "Find-GitReleaseLatest - Begin"
-
-    $baseApiUri = "https://api.github.com/repos/$($repo)/releases/latest"
+    Write-Verbose "Find-GitRelease - Begin"
 
     # make sure we don't try to use an insecure SSL/TLS protocol when downloading files
     $secureProtocols = @() 
@@ -62,9 +61,20 @@ function Find-GitReleaseLatest
     } 
     [System.Net.ServicePointManager]::SecurityProtocol = $secureProtocols
 
+    if ($Latest.IsPresent)
+    {
+        Write-Verbose "Find-GitRelease - Finding latest release."
+        $baseApiUri = "https://api.github.com/repos/$($repo)/releases/latest"
+    }
+    else
+    {
+        Write-Verbose "Find-GitRelease - Finding all releases."
+        $baseApiUri = "https://api.github.com/repos/$($repo)/releases"
+    }
+
     # get the available releases
-    Write-Verbose "Find-GitReleaseLatest - Processing repro: $repo"
-    Write-Verbose "Find-GitReleaseLatest - Making Github API call to: $baseApiUri"
+    Write-Verbose "Find-GitRelease - Processing repro: $repo"
+    Write-Verbose "Find-GitRelease - Making Github API call to: $baseApiUri"
     try 
     {
         if ($pshost.Version.Major -le 5)
@@ -85,30 +95,51 @@ function Find-GitReleaseLatest
         return (Write-Error "Could not get GitHub releases. Error: $_" -EA Stop)        
     }
 
-    Write-Verbose "Find-GitReleaseLatest - Processing results."
-    try
+    
+    if ($Latest.IsPresent)
     {
-        [version]$version = ($rawReleases.Content | ConvertFrom-Json).tag_name
+        try
+        {
+            [version]$version = ($rawReleases.Content | ConvertFrom-Json).tag_name
+        }
+        catch
+        {
+            $version = ($rawReleases.Content | ConvertFrom-Json).tag_name
+        }
+
+        $dlURI = ($rawReleases.Content | ConvertFrom-Json).Assets.browser_download_url
+
+        Write-Verbose "Find-GitRelease - Processing latest version."
+        $releases = [PSCustomObject]@{
+            Repo    = $repo
+            Version = $version
+            URL     = $dlURI
+        }
+
+        Write-Verbose "Find-GitRelease - Found: $version at $dlURI"
     }
-    catch
+    else
     {
-        $version = ($rawReleases.Content | ConvertFrom-Json).tag_name
+        $releases = @()
+        Write-Verbose "Find-GitRelease - Processing $($version.Count) versions."
+        $jsonReleases = $rawReleases.Content | ConvertFrom-Json
+        for ($i = 0; $i -lt $jsonReleases.Count; $i++)
+        {
+            $tmpObj = [PSCustomObject]@{
+                Name    = $jsonReleases[$i].name
+                Version = [version]($jsonReleases[$i].tag_name.TrimStart("v"))
+                URL     = $jsonReleases[$i].Assets.browser_download_url
+            }
+
+            $releases += $tmpObj
+
+            Remove-Variable tmpObj -EA SilentlyContinue
+        }
     }
 
-    Write-Verbose "Find-GitReleaseLatest - Found version: $version"
-
-    $dlURI = ($rawReleases.Content | ConvertFrom-Json).Assets.browser_download_url
-
-    Write-Verbose "Find-GitReleaseLatest - Found download URL: $dlURI"
-
-    Write-Verbose "Find-GitReleaseLatest - End"
-
-    return ([PSCustomObject]@{
-        Repo    = $repo
-        Version = $version
-        URL     = $dlURI
-    })
-} #end Find-GitReleaseLatest
+    Write-Verbose "Find-GitRelease - End"
+    return $releases
+} #end Find-GitRelease
 
 
 
@@ -170,7 +201,7 @@ function Install-FromGithub
     $appxExt = "msixbundle", "appx"
 
     # download wt
-    $release = Find-GitReleaseLatest $repo
+    $release = Find-GitRelease $repo -Latest
     $fileName = "$(($repo -split '/')[-1])`.$extension"
 
     # find the URL
@@ -205,6 +236,10 @@ function Install-FromGithub
         if ($extension -in  $appxExt)
         {
             Add-AppxPackage $installFile -EA Stop
+        }
+        elseif ($extension -eq "msi" -and $fileName -match "powershell")
+        {
+            msiexec.exe /package "$installFile" /quiet ADD_EXPLORER_CONTEXT_MENU_OPENPOWERSHELL=1 ENABLE_PSREMOTING=1 REGISTER_MANIFEST=1 USE_MU=1 ENABLE_MU=1
         }
         else
         {
@@ -253,7 +288,14 @@ function Install-Font
 $savePath = "C:\Temp"
 
 # list of exact winget app IDs to install
-[array]$wingetApps = "Microsoft.PowerShell", "Microsoft.WindowsTerminal", "JanDeDobbeleer.OhMyPosh", "WiresharkFoundation.Wireshark"
+[array]$wingetApps = "JanDeDobbeleer.OhMyPosh", "WiresharkFoundation.Wireshark" # "Microsoft.PowerShell", "Microsoft.WindowsTerminal" -- winget tries to use MSIX which fails on 2022, so grab via github
+
+# powershell repro and file extension
+$pwshRepo = "PowerShell/PowerShell"
+$pwshExt = "msi"
+
+# Windows Terminal details
+$termRepo = "Microsoft/Terminal"
 
 # winget repro and file extension
 $wingetRepo = "microsoft/winget-cli"
@@ -375,8 +417,17 @@ elseif ($RX.IsPresent)
 }
 
 
+## install newest pwsh release ##
+try
+{
+    Install-FromGithub -repo $pwshRepo -extension $pwshExt -savePath $savePath
+}
+catch
+{
+    return (Write-Error "Failed to download or install PowerShell 7+: $_" -EA Stop)
+}
 
-## install winget on WS2022 ##
+## install pre-req's ##
 # install VCLib
 try
 {
@@ -410,13 +461,27 @@ catch
     return (Write-Error "Microsoft.UI.Xaml download or install failed: $_" -EA Stop)
 }
 
+## install Windows Terminal ##
+# get the msixbundle for Win10
+$termBundles = Find-GitRelease $termRepo | Where-Object { $_.Name -notmatch "Preview"} | Sort-Object -Property Version -Descending
+$termURL = $termBundles[0].URL | Where-Object {$_ -match '^*.msixbundle$' -and $_ -match "Win10"}
 
-
-
-# download and install winget from github
 try 
 {
-    $release = Find-GitReleaseLatest $wingetRepo
+    $termFile = Get-WebFile -URI $termURL -savePath $savePath -fileName "terminal.msixbundle" -EA Stop
+    Add-AppxPackage "$termFile" -EA Stop
+}
+catch 
+{
+    return (Write-Error "Failed to download or install Windows Terminal: $_" -EA Stop)
+}
+
+
+
+## download and install winget from github ##
+try 
+{
+    $release = Find-GitRelease $wingetRepo -Latest
     $fileName = "$(($wingetRepo -split '/')[-1])`.$wingetExt"
 
     # find the URL
@@ -482,7 +547,7 @@ if ($fontName -notin (Get-InstalledFonts))
 {
     Write-Verbose "Installing $fontName"
     # get newest font
-    $ccnf = Find-GitReleaseLatest -repo $repoCCNF    
+    $ccnf = Find-GitRelease -repo $repoCCNF -Latest
 
     # find the correct URL
     $ccnfURL = $ccnf.URL | Where-Object {$_ -match $fontFile}
@@ -609,7 +674,7 @@ $wtJSON | ConvertTo-Json -Depth 20 | Out-File "$wtAppData\settings.json" -Force 
 
 
 # get ntttcp
-$ntttcpURL = Find-GitReleaseLatest -repo $repoNtttcp
+$ntttcpURL = Find-GitRelease -repo $repoNtttcp -Latest
 
 try 
 {
