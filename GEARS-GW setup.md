@@ -105,6 +105,13 @@ Enable IP forwarding.
 
 The sysctl command should return "net.ipv4.ip_forward = 1"
 
+[OPTIONAL] Enable IPv6 forwarding.
+```
+sudo sysctl -w net.ipv6.conf.all.forwarding=1
+sed -i '/net.ipv6.conf.all.forwarding/s/^#//' /etc/sysctl.conf
+sysctl -p
+```
+
 Ping 10.1.0.1 from GEARS-RX to confirm the IP is reachable.
 
 ```ping 10.1.0.1```
