@@ -105,13 +105,6 @@ Enable IP forwarding.
 
 The sysctl command should return "net.ipv4.ip_forward = 1"
 
-[OPTIONAL] Enable IPv6 forwarding.
-```
-sudo sysctl -w net.ipv6.conf.all.forwarding=1
-sed -i '/net.ipv6.conf.all.forwarding/s/^#//' /etc/sysctl.conf
-sysctl -p
-```
-
 Ping 10.1.0.1 from GEARS-RX to confirm the IP is reachable.
 
 ```ping 10.1.0.1```
@@ -201,3 +194,246 @@ Update file permissions and enable the service.
 Reboot.
 
 Make sure you can access tcgui via http://10.1.0.1 from a web browser on a lab VM after the reboot.
+
+
+## [OPTIONAl] DHCPv4 + DHCPv6 + NAT66
+
+These steps walk through the basics of setting up DHCP and NAT66.
+
+[Install ISC KEA](https://documentation.ubuntu.com/server/how-to/networking/install-isc-kea/index.html) for DHCPv4 and DHCPv6. The Ubuntu install adds everything you need.
+
+```sh
+sudo apt install kea
+```
+
+Use the "configure with a random password" option during setup.
+
+Rename the kea-dhcp4.conf file.
+
+```mv /etc/kea/kea-dhcp4.conf /etc/kea/kea-dhcp4.conf.original```
+
+Edit the kea-dhcp4.conf contents below to match your environment. 
+- This file is only for a single interface, but can be expanded to handle both interfaces.
+- Change `"interfaces": [ "eth1" ]` to `"interfaces": [ "eth1", "eth2" ]` to add both interfaces.
+- Add `"interface": "ethX",` entries to the subnet matching eth1 and eth2, after the "id" line. Changing the X in ethX to the appropriate interface number or name.
+
+```
+{
+  "Dhcp4": {
+        "interfaces-config": {
+        "interfaces": [ "eth1" ]
+        },
+        "control-socket": {
+        "socket-type": "unix",
+        "socket-name": "/run/kea/kea4-ctrl-socket"
+        },
+        "lease-database": {
+        "type": "memfile",
+        "lfc-interval": 3600
+        },
+        "valid-lifetime": 600,
+        "max-valid-lifetime": 7200,
+        "subnet4": [
+        {
+          "id": 1,
+          "subnet": "10.1.0.0/24",
+          "pools": [
+          {
+                "pool": "10.1.0.150 - 10.1.0.200"
+          }
+        ],
+        "option-data": [
+        {
+                "name": "routers",
+                "data": "10.1.0.1"
+        },
+        {
+                "name": "domain-name-servers",
+                "data": "192.168.1.1, 1.1.1.1"
+        },
+        {
+                "name": "domain-name",
+                "data": "contoso.com"
+        }
+        ]
+        }
+        ]
+  }
+}
+```
+
+Create/Edit kea-dhcp4.conf.
+
+```nano /etc/kea/kea-dhcp4.conf```
+
+Paste the modified conf data from above into the file, then Ctrl+X -> Y -> Enter to save the file.
+
+Run this command to reload the configuration.
+- The console will pause with no output.
+- Press Ctrl+D.
+- The output should contain "Configuration successful."
+
+```kea-shell --host 127.0.0.1 --port 8000 --auth-user kea-api --auth-password $(cat /etc/kea/kea-api-password) --service dhcp4 config-reload```
+
+
+Use the text below to build kea-dhcp6.conf file content.
+- I have [built a tool](https://github.com/JamesKehr/Azure) for creating ULA address spaces.
+- Run this command in PowerShell to generate an IPv6 address space. This works in PowerShell for Linux, too.
+  
+```powershell
+$ipv6 = iwr https://raw.githubusercontent.com/JamesKehr/Azure/main/Get-AzPrivateIPv6Subnet.ps1 | iex
+```
+
+- The use this command to get the subnet CIDR syntax that can be used in the config below.
+
+```powershell
+$ipv6.GetAzSubnet(0)
+```
+
+- Like the DHCP4 conf file, additional interfaces and subnets can be generated.
+- Use the commands below to generate a second subnet for eth2. Additional subnets can be generated using the same principle.
+
+```powershell
+$ipv6.AddSubnetID()
+$ipv6.GetAzSubnet(1)
+```
+
+kea-dhcp6.conf content:
+
+```
+{
+# DHCPv6 configuration starts on the next line
+"Dhcp6": {
+
+# First we set up global values
+    "valid-lifetime": 4000,
+    "renew-timer": 1000,
+    "rebind-timer": 2000,
+    "preferred-lifetime": 3000,
+
+# Next we set up the interfaces to be used by the server.
+    "interfaces-config": {
+        "interfaces": [ "eth1" ],
+        "service-sockets-require-all": true,
+        "service-sockets-max-retries": 5,
+        "service-sockets-retry-wait-time": 5000
+    },
+
+# And we specify the type of lease database
+    "lease-database": {
+        "type": "memfile",
+        "lfc-interval": 3600
+    },
+
+# Finally, we list the subnets from which we will be leasing addresses.
+    "subnet6": [
+        {
+            # update the interface name here
+            "interface": "eth1",
+            # change the subnet here
+            "subnet": "fd::/64",
+            "pools": [
+                {
+                    # update the pool here
+                    # if the generate subnet was fda4:6d59:9bbb:fc9d::/64, then the pool would be fda4:6d59:9bbb:fc9d:1::/80
+                    "pool": "fd::1::/80"
+                }
+             ]
+        }
+    ]
+# DHCPv6 configuration ends with the next line
+}
+
+}
+```
+
+
+Edit/Create the kea-dhcp6.conf file.
+
+```nano /etc/kea/kea-dhcp6.conf```
+
+Copy/paste the kea-dhcp6.conf content, then  Ctrl+X -> Y -> Enter to save the file.
+
+Try this command to reload the DHCPv6 server.
+- Press Ctrl+D to perform the reload.
+
+```kea-shell --host 127.0.0.1 --port 8000 --auth-user kea-api --auth-password $(cat /etc/kea/kea-api-password) --service dhcp6 config-reload```
+
+- The command might throw an error and I don't know why.
+- If the command outputs something like "unable to forward command to the dhcp6 service: No such file or directory. The server is likely to be offline" the run this command to restart the service.
+
+```systemctl restart kea-dhcp6-server.service```
+
+- Then make sure the service started using this command. Press Q to exit the status output.
+
+```systemctl status kea-dhcp6-server.service```
+
+Enable IPv6 forwarding.
+
+```
+sysctl -w net.ipv6.conf.all.forwarding=1
+sysctl -w net.ipv6.conf.default.forwarding = 1
+sed -i '/net.ipv6.conf.all.forwarding/s/^#//' /etc/sysctl.conf
+sed -i '/ net.ipv6.conf.default.forwarding/s/^#//' /etc/sysctl.conf
+sysctl -p
+```
+
+Enable IPv6 MASQUERADE 
+
+```p6tables -t nat -A POSTROUTING -j MASQUERADE```
+
+Install radvd. This enables router advertisements, needed to send the IPv6 gateway to clients.
+
+```apt install radvd radvdump```
+
+Edit the radvd.conf file.
+
+```nano /etc/radvd.conf```
+
+Add this content to the file.
+- This does not advertise an IPv6 prefix, only the M-bit (Managed flag) to check DHCPv6.
+- Adding other config (DNS servers) is not in this example, but can be added by updating the DHCPv6 config.
+- Add one entry per interface.
+- Leave the WAN (eth0) interface off.
+
+```
+interface eth0 {
+        AdvSendAdvert off;
+        AdvOtherConfigFlag off;
+        AdvManagedFlag off;
+};
+
+interface eth1 {
+        AdvSendAdvert on;
+        MinRtrAdvInterval 3;
+        MaxRtrAdvInterval 10;
+        AdvOtherConfigFlag off;
+        AdvManagedFlag on;
+};
+```
+
+Restart radvd to reload the changes and get the status to make sure it restarted successfully.
+
+```
+systemctl restart radvd
+systemctl status radvd
+```
+
+Run this command to make sure the configuration is working. The command may take a minute or so to run.
+
+```
+systemctl restart radvd
+```
+
+Radvd is working if router advertisements are coming from eth1 (and optionally eth2), but not eth0.
+
+Press Ctrl+C to stop testing.
+
+Boot up a lab client on the BLUE network.
+
+The client should have IPv4 and IPv6 addresses from the gateway's DHCP servers. And internet connectivity should work.
+
+```
+ping -4 example.com
+ping -6 example.com
+```
