@@ -196,7 +196,7 @@ Reboot.
 Make sure you can access tcgui via http://10.1.0.1 from a web browser on a lab VM after the reboot.
 
 
-## [OPTIONAl] DHCPv4 + DHCPv6 + NAT66
+## [OPTIONAL] DHCPv4 + DHCPv6 + NAT66
 
 These steps walk through the basics of setting up DHCP and NAT66.
 
