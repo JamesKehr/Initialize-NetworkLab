@@ -437,3 +437,182 @@ The client should have IPv4 and IPv6 addresses from the gateway's DHCP servers. 
 ping -4 example.com
 ping -6 example.com
 ```
+
+# IPv6-mostly configuration
+
+## Setup BIND9 for DNS and DNS64
+
+This configuration causes bind9 to act like a cache server with no domains of its own. Feel free to add zones if you want.
+
+References:
+
+https://documentation.ubuntu.com/server/how-to/networking/install-dns/#set-up-a-primary-server
+https://www.isc.org/blogs/doh-talkdns/
+
+Install bind9 and dnsutils.
+
+```
+apt install bind9 dnsutils
+```
+
+Enable the bind9 named service to auto-start.
+
+```
+systemctl enable named
+```
+
+Edit /etc/bind/named.conf.options
+
+```
+nano /etc/bind/named.conf.options
+```
+
+Uncomment the forwarders section and add some forwarders. This example will use Cloudflare DNS (1.1.1.1, 1.0.0.1, 2606:4700:4700::1111, 2606:4700:4700::1001).
+
+```
+        forwarders {
+             1.1.1.1;
+             1.0.0.1;
+             2606:4700:4700::1111;
+             2606:4700:4700::1001;
+        };
+```
+
+Add the following lines under `listen-on-v6 { any; };`
+
+```
+        listen-on { any; };
+
+        recursion yes;
+        allow-recursion { any; };
+```
+
+The final file should look like this, at a minimum.
+
+```
+options {
+        directory "/var/cache/bind";
+
+        // If there is a firewall between you and nameservers you want
+        // to talk to, you may need to fix the firewall to allow multiple
+        // ports to talk.  See http://www.kb.cert.org/vuls/id/800113
+
+        // If your ISP provided one or more IP addresses for stable
+        // nameservers, you probably want to use them as forwarders.
+        // Uncomment the following block, and insert the addresses replacing
+        // the all-0's placeholder.
+
+        forwarders {
+             1.1.1.1;
+             1.0.0.1;
+             2606:4700:4700::1111;
+             2606:4700:4700::1001;
+        };
+
+        //========================================================================
+        // If BIND logs error messages about the root key being expired,
+        // you will need to update your keys.  See https://www.isc.org/bind-keys
+        //========================================================================
+        dnssec-validation auto;
+
+        listen-on-v6 { any; };
+        listen-on { any; };
+
+        recursion yes;
+        allow-recursion { any; };
+};
+```
+
+Save and close: Ctrl-X, Y, Enter
+
+Validate the configuration. No output is good output.
+
+```
+named-checkconf /etc/bind/named.conf.options
+```
+
+Restart the named (bind9) service and make sure there are no errors.
+
+```
+systemctl restart named
+systemctl status named
+```
+
+Test the bind9 DNS server locally and on a VM in the lab.
+
+On the gateway server:
+
+```
+dig example.com AAAA
+dig example.com A
+```
+
+On the Windows client:
+
+```powershell
+$query = "example.com"
+$gtwys = Get-NetIPConfiguration | ForEach-Object {@($_.IPv6DefaultGateway.NextHop, $_.IPv4DefaultGateway.NextHop)}
+$gtwys | ForEach-Object {Write-Host -fore Green "Gateway: $_"; Resolve-DnsName $query -Server $_}
+```
+
+Continue if everything is working this far.
+
+Get your ULA IPv6 prefix.
+- This is the fd::/64 address space generated earlier in the instructions.
+- You can use the command `ip addr` to get the IPv6 address details from the console; however, this needs to be in prefix format, not IPv6 address format.
+- An address of `fd1a:7148:e9a0:186a::1/64` in the `ip addr` output would be `fd1a:7148:e9a0:186a::/64` in prefix format.
+
+Edit /etc/bind/named.conf.options to enable dns64.
+
+```
+nano /etc/bind/named.conf.options
+```
+
+Add the following to the config file:
+
+Template:
+```
+dns64 <your_ULA_prefix>/<prefix_length> {};
+```
+
+Example:
+```
+ dns64 fd1a:7148:e9a0:186a::/64 {};
+```
+
+Save and close the file: Ctrl+X, Y, Enter
+
+Verfiy the file and restart the service.
+
+```
+named-checkconf /etc/bind/named.conf.options
+systemctl restart named
+systemctl status named
+```
+
+Now perform a DNS lookup for a website with only an IPv4 address.
+
+```
+Resolve-DnsName jammrock.com -Server 10.1.0.1
+```
+
+This should return the IPv4 address and the a DNS64 translated address using the lab's ULA address space.
+
+```
+Name                                           Type   TTL   Section    IPAddress
+----                                           ----   ---   -------    ---------
+jammrock.com                                   AAAA   300   Answer     fd1a:7148:e9a0:186a:17:63fa:4c00:0
+jammrock.com                                   A      3600  Answer     23.99.250.76
+```
+
+
+### [OPTIONAL] Setup certbot to generate certificates needed for DoH.
+
+This step requires public facing DNS or HTTP[S] site for Let's Encrypt to challenge or it will not hand out a certificate.
+
+FUTURE
+
+
+
+## Setup tayga64 for NAT64
+
