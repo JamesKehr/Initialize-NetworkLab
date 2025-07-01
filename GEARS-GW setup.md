@@ -306,10 +306,18 @@ kea-dhcp6.conf content:
 "Dhcp6": {
 
 # First we set up global values
-    "valid-lifetime": 4000,
-    "renew-timer": 1000,
+    # Address expiration.
+    # default: 4000; Lab: 600 (10 minutes)
+    "valid-lifetime": 600,
+    # This is the T1 time.
+    # Default: 1000; Lab: 300 (5 minutes)
+    "renew-timer": 300,
+    # This is the T2 time.
+    # Default: 2000; Lab: 480 (8 minutes)
     "rebind-timer": 2000,
-    "preferred-lifetime": 3000,
+    # Determines when the address becomes deprecated.
+    # Default: 3000; Lab: 940 (9 minutes)
+    "preferred-lifetime": 940,
 
 # Next we set up the interfaces to be used by the server.
     "interfaces-config": {
