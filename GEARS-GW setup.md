@@ -5,7 +5,7 @@ Items covered in this doc:
 - NAT4 (MASQUERADE).
 - Linux network tuning in Hyper-V.
 
-  Optional components:
+Optional components:
 
 - tcgui for WAN emulation.
 - KEA DHCP[v4].
@@ -15,6 +15,9 @@ Items covered in this doc:
   - radvd for Router Advertisements to obtain the IPv6 gateway
   - tayga NAT64
 
+Future:
+- BIND9 DNS over HTTPS server
+- certbot for certificate creation
 
 These instructions are designed for running Ubuntu as a Hyper-V VM.
 
