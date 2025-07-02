@@ -1,8 +1,24 @@
-# How to setup an Ubuntu gateway guide for Windows admins
+# How to setup an Ubuntu gateway for Windows network admins
+
+Items covered in this doc:
+- Basic Ubuntu (Linux) multi-homed network.
+- NAT4 (MASQUERADE).
+- Linux network tuning in Hyper-V.
+
+  Optional components:
+
+- tcgui for WAN emulation.
+- KEA DHCP[v4].
+- IPv6-mostly
+  - KEA DHCPv6
+  - BIND9 DNS server with DNS64 (NAT64 ready)
+  - radvd for Router Advertisements to obtain the IPv6 gateway
+  - tayga NAT64
+
 
 These instructions are designed for running Ubuntu as a Hyper-V VM.
 
-Download the Ubuntu 20.04 server, manual server installation, from: https://ubuntu.com/download/server
+Download the Ubuntu 24.04 server, manual server installation, from: https://ubuntu.com/download/server
 
 Create a gen 2 VM using the ISO.
 
