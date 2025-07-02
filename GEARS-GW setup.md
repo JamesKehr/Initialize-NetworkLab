@@ -196,7 +196,7 @@ Reboot.
 Make sure you can access tcgui via http://10.1.0.1 from a web browser on a lab VM after the reboot.
 
 
-## [OPTIONAL] DHCPv4 + DHCPv6 + NAT66
+## [OPTIONAL] DHCPv4
 
 These steps walk through the basics of setting up DHCP and NAT66.
 
@@ -282,7 +282,11 @@ kea-shell --host 127.0.0.1 --port 8000 --auth-user kea-api --auth-password $(cat
 ```
 
 
-Use the text below to build kea-dhcp6.conf file content.
+## [OPTIONAL] IPv6-mostly (DHCPv6 + DNS64 + NAT64)
+
+### Use KEA DHCPv6 for ULA address assignment
+
+Use a tool to generate a ULA IPv6 prefix.
 - I have [built a tool](https://github.com/JamesKehr/Azure) for creating ULA address spaces.
 - Run this command in PowerShell to generate an IPv6 address space. This works in PowerShell for Linux, too.
   
@@ -303,6 +307,8 @@ $ipv6.GetAzSubnet(0)
 $ipv6.AddSubnetID()
 $ipv6.GetAzSubnet(1)
 ```
+
+Use the text below to build kea-dhcp6.conf file content.
 
 kea-dhcp6.conf content:
 
@@ -361,6 +367,11 @@ kea-dhcp6.conf content:
 }
 ```
 
+Backup any example kea-dhcp6.conf file.
+
+```sh
+mv /etc/kea/kea-dhcp6.conf /etc/kea/kea-dhcp6.conf.original
+```
 
 Edit/Create the kea-dhcp6.conf file.
 
@@ -378,17 +389,18 @@ kea-shell --host 127.0.0.1 --port 8000 --auth-user kea-api --auth-password $(cat
 ```
 
 - The command might throw an error and I don't know why.
-- If the command outputs something like "unable to forward command to the dhcp6 service: No such file or directory. The server is likely to be offline" the run this command to restart the service.
+- If the command outputs something like "unable to forward command to the dhcp6 service: No such file or directory. The server is likely to be offline" then run this command to restart the service.
 
 ```sh
 systemctl restart kea-dhcp6-server.service
 ```
 
-- Then make sure the service started using this command. Press Q to exit the status output.
+- Make sure the service started using this command. Press Q to exit the status output.
 
 ```
 systemctl status kea-dhcp6-server.service
 ```
+
 
 Enable IPv6 forwarding.
 
@@ -406,6 +418,8 @@ Enable IPv6 MASQUERADE
 ip6tables -t nat -A POSTROUTING -j MASQUERADE
 ```
 
+### Use radvd to advertise the IPv6 gateway
+
 Install radvd. This enables router advertisements, needed to send the IPv6 gateway to clients.
 
 ```sh
@@ -419,7 +433,7 @@ nano /etc/radvd.conf
 ```
 
 Add this content to the file.
-- This does not advertise an IPv6 prefix, only the M-bit (Managed flag) to check DHCPv6.
+- This does not advertise an IPv6 prefix, only the M-bit (Managed flag) to use DHCPv6.
 - Adding other config (DNS servers) is not in this example, but can be added by updating the DHCPv6 config.
 - Add one entry per interface.
 - Leave the WAN (eth0) interface off.
@@ -447,10 +461,10 @@ systemctl restart radvd
 systemctl status radvd
 ```
 
-Run this command to make sure the configuration is working. The command may take a minute or so to run.
+Run this command to make sure the configuration is working. It may take a minute or so for results to appear.
 
 ```sh
-systemctl restart radvd
+radvdump
 ```
 
 Radvd is working if router advertisements are coming from eth1 (and optionally eth2), but not eth0.
@@ -466,9 +480,7 @@ ping -4 example.com
 ping -6 example.com
 ```
 
-# IPv6-mostly configuration
-
-## Setup BIND9 for DNS and DNS64
+### Setup BIND9 for DNS and DNS64
 
 This configuration causes bind9 to act like a cache server with no domains of its own. Feel free to add zones if you want.
 
@@ -650,15 +662,7 @@ jammrock.com                                   A      3600  Answer     23.99.250
 ```
 
 
-### [OPTIONAL] Setup certbot to generate certificates needed for DoH.
-
-This step requires public facing DNS or HTTP[S] site for Let's Encrypt to challenge or it will not hand out a certificate.
-
-FUTURE
-
-
-
-## Setup tayga64 for NAT64
+## Setup tayga for NAT64
 
 Please make sure DNS64 is configured with Option 1, using the `64:ff9b::/96` well-known IPv6 prefix before proceeding.
 
@@ -677,3 +681,8 @@ nano /etc/tayga.conf
 
 
 
+### [OPTIONAL] Setup certbot to generate certificates needed for DoH.
+
+This step requires public facing DNS or HTTP[S] site for Let's Encrypt to challenge or it will not hand out a certificate.
+
+FUTURE
