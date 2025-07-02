@@ -645,7 +645,7 @@ This should return the IPv4 address and the a DNS64 translated address using the
 ```
 Name                                           Type   TTL   Section    IPAddress
 ----                                           ----   ---   -------    ---------
-jammrock.com                                   AAAA   300   Answer     fd1a:7148:e9a0:186a:17:63fa:4c00:0
+jammrock.com                                   AAAA   300   Answer     64:ff9b::1763:fa4c
 jammrock.com                                   A      3600  Answer     23.99.250.76
 ```
 
