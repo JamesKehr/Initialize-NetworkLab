@@ -210,14 +210,16 @@ Use the "configure with a random password" option during setup.
 
 Rename the kea-dhcp4.conf file.
 
-```mv /etc/kea/kea-dhcp4.conf /etc/kea/kea-dhcp4.conf.original```
+```sh
+mv /etc/kea/kea-dhcp4.conf /etc/kea/kea-dhcp4.conf.original
+```
 
 Edit the kea-dhcp4.conf contents below to match your environment. 
 - This file is only for a single interface, but can be expanded to handle both interfaces.
 - Change `"interfaces": [ "eth1" ]` to `"interfaces": [ "eth1", "eth2" ]` to add both interfaces.
 - Add `"interface": "ethX",` entries to the subnet matching eth1 and eth2, after the "id" line. Changing the X in ethX to the appropriate interface number or name.
 
-```
+```sh
 {
   "Dhcp4": {
         "interfaces-config": {
@@ -264,7 +266,9 @@ Edit the kea-dhcp4.conf contents below to match your environment.
 
 Create/Edit kea-dhcp4.conf.
 
-```nano /etc/kea/kea-dhcp4.conf```
+```sh
+nano /etc/kea/kea-dhcp4.conf
+```
 
 Paste the modified conf data from above into the file, then Ctrl+X -> Y -> Enter to save the file.
 
@@ -273,7 +277,9 @@ Run this command to reload the configuration.
 - Press Ctrl+D.
 - The output should contain "Configuration successful."
 
-```kea-shell --host 127.0.0.1 --port 8000 --auth-user kea-api --auth-password $(cat /etc/kea/kea-api-password) --service dhcp4 config-reload```
+```sh
+kea-shell --host 127.0.0.1 --port 8000 --auth-user kea-api --auth-password $(cat /etc/kea/kea-api-password) --service dhcp4 config-reload
+```
 
 
 Use the text below to build kea-dhcp6.conf file content.
@@ -300,7 +306,7 @@ $ipv6.GetAzSubnet(1)
 
 kea-dhcp6.conf content:
 
-```
+```sh
 {
 # DHCPv6 configuration starts on the next line
 "Dhcp6": {
@@ -358,27 +364,35 @@ kea-dhcp6.conf content:
 
 Edit/Create the kea-dhcp6.conf file.
 
-```nano /etc/kea/kea-dhcp6.conf```
+```sh
+nano /etc/kea/kea-dhcp6.conf
+```
 
 Copy/paste the kea-dhcp6.conf content, then  Ctrl+X -> Y -> Enter to save the file.
 
 Try this command to reload the DHCPv6 server.
 - Press Ctrl+D to perform the reload.
 
-```kea-shell --host 127.0.0.1 --port 8000 --auth-user kea-api --auth-password $(cat /etc/kea/kea-api-password) --service dhcp6 config-reload```
+```sh
+kea-shell --host 127.0.0.1 --port 8000 --auth-user kea-api --auth-password $(cat /etc/kea/kea-api-password) --service dhcp6 config-reload
+```
 
 - The command might throw an error and I don't know why.
 - If the command outputs something like "unable to forward command to the dhcp6 service: No such file or directory. The server is likely to be offline" the run this command to restart the service.
 
-```systemctl restart kea-dhcp6-server.service```
+```sh
+systemctl restart kea-dhcp6-server.service
+```
 
 - Then make sure the service started using this command. Press Q to exit the status output.
 
-```systemctl status kea-dhcp6-server.service```
+```
+systemctl status kea-dhcp6-server.service
+```
 
 Enable IPv6 forwarding.
 
-```
+```sh
 sysctl -w net.ipv6.conf.all.forwarding=1
 sysctl -w net.ipv6.conf.default.forwarding = 1
 sed -i '/net.ipv6.conf.all.forwarding/s/^#//' /etc/sysctl.conf
@@ -388,15 +402,21 @@ sysctl -p
 
 Enable IPv6 MASQUERADE 
 
-```p6tables -t nat -A POSTROUTING -j MASQUERADE```
+```sh
+ip6tables -t nat -A POSTROUTING -j MASQUERADE
+```
 
 Install radvd. This enables router advertisements, needed to send the IPv6 gateway to clients.
 
-```apt install radvd radvdump```
+```sh
+apt install radvd radvdump
+```
 
 Edit the radvd.conf file.
 
-```nano /etc/radvd.conf```
+```sh
+nano /etc/radvd.conf
+```
 
 Add this content to the file.
 - This does not advertise an IPv6 prefix, only the M-bit (Managed flag) to check DHCPv6.
@@ -404,7 +424,7 @@ Add this content to the file.
 - Add one entry per interface.
 - Leave the WAN (eth0) interface off.
 
-```
+```sh
 interface eth0 {
         AdvSendAdvert off;
         AdvOtherConfigFlag off;
@@ -422,14 +442,14 @@ interface eth1 {
 
 Restart radvd to reload the changes and get the status to make sure it restarted successfully.
 
-```
+```sh
 systemctl restart radvd
 systemctl status radvd
 ```
 
 Run this command to make sure the configuration is working. The command may take a minute or so to run.
 
-```
+```sh
 systemctl restart radvd
 ```
 
@@ -441,7 +461,7 @@ Boot up a lab client on the BLUE network.
 
 The client should have IPv4 and IPv6 addresses from the gateway's DHCP servers. And internet connectivity should work.
 
-```
+```sh
 ping -4 example.com
 ping -6 example.com
 ```
@@ -459,25 +479,25 @@ https://www.isc.org/blogs/doh-talkdns/
 
 Install bind9 and dnsutils.
 
-```
+```sh
 apt install bind9 dnsutils
 ```
 
 Enable the bind9 named service to auto-start.
 
-```
+```sh
 systemctl enable named
 ```
 
 Edit /etc/bind/named.conf.options
 
-```
+```sh
 nano /etc/bind/named.conf.options
 ```
 
 Uncomment the forwarders section and add some forwarders. This example will use Cloudflare DNS (1.1.1.1, 1.0.0.1, 2606:4700:4700::1111, 2606:4700:4700::1001).
 
-```
+```sh
         forwarders {
              1.1.1.1;
              1.0.0.1;
@@ -488,7 +508,7 @@ Uncomment the forwarders section and add some forwarders. This example will use 
 
 Add the following lines under `listen-on-v6 { any; };`
 
-```
+```sh
         listen-on { any; };
 
         recursion yes;
@@ -497,7 +517,7 @@ Add the following lines under `listen-on-v6 { any; };`
 
 The final file should look like this, at a minimum.
 
-```
+```sh
 options {
         directory "/var/cache/bind";
 
@@ -535,13 +555,13 @@ Save and close: Ctrl-X, Y, Enter
 
 Validate the configuration. No output is good output.
 
-```
+```sh
 named-checkconf /etc/bind/named.conf.options
 ```
 
 Restart the named (bind9) service and make sure there are no errors.
 
-```
+```sh
 systemctl restart named
 systemctl status named
 ```
@@ -550,7 +570,7 @@ Test the bind9 DNS server locally and on a VM in the lab.
 
 On the gateway server:
 
-```
+```sh
 dig example.com AAAA
 dig example.com A
 ```
@@ -578,6 +598,21 @@ nano /etc/bind/named.conf.options
 
 Add the following to the config file:
 
+### OPTION 1: Configure for NAT64 (Recommended)
+
+This prepares BIND9 DNS64 to work with tayga NAT64.
+
+```
+        dns64 64:ff9b::/96 {
+            clients { any; }; // Affect all clients
+            mapped { any; };  // Map all IPv4 addresses
+        };
+```
+
+### OPTION 2: Configure for ULA
+
+This option 
+
 Template:
 ```
 dns64 <your_ULA_prefix>/<prefix_length> {};
@@ -587,6 +622,7 @@ Example:
 ```
  dns64 fd1a:7148:e9a0:186a::/64 {};
 ```
+
 
 Save and close the file: Ctrl+X, Y, Enter
 
@@ -623,4 +659,21 @@ FUTURE
 
 
 ## Setup tayga64 for NAT64
+
+Please make sure DNS64 is configured with Option 1, using the `64:ff9b::/96` well-known IPv6 prefix before proceeding.
+
+Install tayga.
+
+```sh
+apt install tayga
+```
+
+Edit `tayga.conf`.
+
+```sh
+nano /etc/tayga.conf
+```
+
+
+
 
