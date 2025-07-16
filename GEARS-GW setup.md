@@ -505,10 +505,20 @@ network:
       dhcp4: true
       dhcp6: true
     eth1:
-      addresses: [10.1.0.1/24, fd29:d3fc:a205:9511::1/64]
+      addresses: [10.1.0.1/24, <ULA subnet>::1/64]
       nameservers:
         addresses: [192.168.1.1, 1.1.1.1, 2606:4700:4700::1111, 2620:fe::fe]
 ```
+
+Save and close: Ctrl+x, y, Enter
+
+Run:
+
+```sh
+netplan try
+```
+
+Use `ip addr` to confirm eth1 (and/or other interfaces) have a static ULA address.
 
 Boot up a lab client on the BLUE network.
 
