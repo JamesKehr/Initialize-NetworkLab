@@ -425,9 +425,9 @@ Enable IPv6 forwarding.
 
 ```sh
 sysctl -w net.ipv6.conf.all.forwarding=1
-sysctl -w net.ipv6.conf.default.forwarding = 1
+sysctl -w net.ipv6.conf.default.forwarding=1
 sed -i '/net.ipv6.conf.all.forwarding/s/^#//' /etc/sysctl.conf
-sed -i '/ net.ipv6.conf.default.forwarding/s/^#//' /etc/sysctl.conf
+sed -i '/net.ipv6.conf.default.forwarding/s/^#//' /etc/sysctl.conf
 sysctl -p
 ```
 
