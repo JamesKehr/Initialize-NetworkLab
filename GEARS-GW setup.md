@@ -776,6 +776,12 @@ WantedBy=multi-user.target
 
 Close and save: Ctrl+x, y, Enter
 
+Enable the jool-oneshot service.
+
+```bash
+systemctl enable jool-oneshot
+```
+
 Add jool to the module load list.
 
 ```bash
