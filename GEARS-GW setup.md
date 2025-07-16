@@ -94,7 +94,6 @@ Edit the file so it looks something like this (spacing MUST be exact!):
 - Change the name server (DNS) addresses to match your network configuration.
 - The addresses may look differnt if you setup the IPs during the Ubuntu install, and that's fine.
 - The order NICs may be different in your setup if you created all three NICs prior to Ubuntu setup. Adjust the config file accordingly.
-- [OPTIONAL] Add `dhcp6: true` on eth0 if you plan to configure IPv6 on the internal network.
 
 ```yaml
 network:
@@ -102,7 +101,6 @@ network:
   ethernets:
     eth0:
       dhcp4: true
-      dhcp6: true
     eth1:
       addresses: [10.1.0.1/24]
       nameservers:
@@ -491,6 +489,26 @@ radvdump
 Radvd is working if router advertisements are coming from eth1 (and optionally eth2), but not eth0.
 
 Press Ctrl+C to stop testing.
+
+Edit the netplan yaml file where the IPv4 gateway address was added (example: `/etc/netplan/50-cloud-init.yaml`)
+- Add `dhcp6: true` on eth0.
+- Add a static IPv6 address from the ULA address space to eth1 and other internal adapters.
+- Use a well known IPv6 address, such as <ULA>::1/64.
+
+Example:
+
+```sh
+network:
+  version: 2
+  ethernets:
+    eth0:
+      dhcp4: true
+      dhcp6: true
+    eth1:
+      addresses: [10.1.0.1/24, fd29:d3fc:a205:9511::1/64]
+      nameservers:
+        addresses: [192.168.1.1, 1.1.1.1, 2606:4700:4700::1111, 2620:fe::fe]
+```
 
 Boot up a lab client on the BLUE network.
 
