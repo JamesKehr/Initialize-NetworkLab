@@ -497,7 +497,7 @@ Edit the netplan yaml file where the IPv4 gateway address was added (example: `/
 
 Example:
 
-```sh
+```yaml
 network:
   version: 2
   ethernets:
