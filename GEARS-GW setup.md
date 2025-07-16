@@ -717,23 +717,84 @@ jammrock.com                                   A      3600  Answer     23.99.250
 ```
 
 
-## Setup tayga for NAT64
+## Setup jool for NAT64
+
+Based on: https://cooperlees.com/2020/12/nat64-using-jool-on-ubuntu-20-04/
 
 Please make sure DNS64 is configured with Option 1, using the `64:ff9b::/96` well-known IPv6 prefix before proceeding.
 
-Install tayga.
+Install jool.
 
 ```sh
-apt install tayga
+apt install jool-dkms jool-tools
 ```
 
-Edit `tayga.conf`.
+You will be prompted to create a boot password if Secure Boot is enabled. Enter a password or jool will not install.
 
-```sh
-nano /etc/tayga.conf
+### Secure Boot ONLY
+
+Reboot the gateway.
+
+A boot time menu will appear.
+
+Select Enroll MOK.
+
+Follow the prompts until you are prompted for the password.
+
+Enter the password from the jool install.
+
+Reboot.
+
+### Continue with jool setup...
+
+Run:
+
+```bash
+sudo modprobe jool
+jool instance add --netfilter --pool6 64:ff9b::/96
 ```
 
+Create a oneshot systemd server by editing/creating a service file with this command.
 
+```bash
+nano /etc/systemd/system/jool-oneshot.service
+```
+
+Add these contents:
+
+```conf
+[Unit]
+Description=Add NAT64 netfilter pool6 to jool
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/jool instance add --netfilter --pool6 64:ff9b::/96
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Close and save: Ctrl+x, y, Enter
+
+Add jool to the module load list.
+
+```bash
+nano /etc/modules-load.d/jool.conf
+```
+
+Add the word jool to the file content.
+
+```
+jool
+```
+
+Close and save: Ctrl+x, y, Enter
+
+Reboot to ensure that jool loads correctly on boot.
+
+```bash
+lsmod | grep jool
+```
 
 
 ### [OPTIONAL] Setup certbot to generate certificates needed for DoH.
