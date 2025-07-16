@@ -238,7 +238,7 @@ Edit the kea-dhcp4.conf contents below to match your environment.
 - Change `"interfaces": [ "eth1" ]` to `"interfaces": [ "eth1", "eth2" ]` to add both interfaces.
 - Add `"interface": "ethX",` entries to the subnet matching eth1 and eth2, after the "id" line. Changing the X in ethX to the appropriate interface number or name.
 
-```sh
+```javascript
 {
   "Dhcp4": {
         "interfaces-config": {
@@ -331,7 +331,7 @@ Use the text below to build kea-dhcp6.conf file content.
 
 kea-dhcp6.conf content:
 
-```sh
+```javascript
 {
 # DHCPv6 configuration starts on the next line
 "Dhcp6": {
@@ -347,8 +347,8 @@ kea-dhcp6.conf content:
     # Default: 2000; Lab: 480 (8 minutes)
     "rebind-timer": 2000,
     # Determines when the address becomes deprecated.
-    # Default: 3000; Lab: 940 (9 minutes)
-    "preferred-lifetime": 940,
+    # Default: 3000; Lab: 540 (9 minutes)
+    "preferred-lifetime": 540,
 
 # Next we set up the interfaces to be used by the server.
     "interfaces-config": {
@@ -371,6 +371,12 @@ kea-dhcp6.conf content:
             "interface": "eth1",
             # change the subnet here
             "subnet": "fd::/64",
+            "option-data": [
+               {
+                   "name": "dns-servers",
+                   "data": "<eth1 IPv6 address>"
+               }
+            ],
             "pools": [
                 {
                     # update the pool here
