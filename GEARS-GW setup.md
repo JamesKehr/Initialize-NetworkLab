@@ -61,9 +61,22 @@ Install required components for the lab. You can copy/paste the commands when us
 
 	apt install iproute2 python3-flask bridge-utils net-tools iptables-persistent git -y
 
+[Optional] Install mDNS. 
+- This will allow you to ssh using <hostname>.local rather than hunting for the IP address of the gateway.
+- mDNS will not work if the gateway is behind a Default Switch, it wil only work if the gateway is attached to an external vmSwitch.
+
+```bash
+snap install mdns
+```
+
+[Optional] Example ssh command with mDNS where the username is `gw` and the hostname is `gateway`.
+
+```
+ssh gw@gateway.local
+```
+
 
 Create a VM snapshot at this point in case something breaks when setting up the network routing.
-
 
 Create a new NIC on the VM for the RED network. This should appear as eth1 when you run "ip addr" or "ip link". We will leave eth0 on DHCP connected to the public network.
 
