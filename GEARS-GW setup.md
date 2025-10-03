@@ -97,11 +97,15 @@ In my installation the file name is 00-installer-config.yaml.
 
 Edit the YAMl file found above.
 
-	nano /etc/netplan/<YAML file>
+```bash
+nano /etc/netplan/<YAML file>
+```
 
 Example:
 
-	nano /etc/netplan/00-installer-config.yaml
+```bash
+nano /etc/netplan/50-cloud-init.yaml
+```
 
 Use the arrow, home, and end keys, to position the cursor inside nano. Press enter to create a new line.
 
@@ -998,6 +1002,86 @@ Setup and test the internal probe on a test system.
 - Close regedit.
 - Restart the computer.
 
+
+## Enable IPv6-only
+
+Disable the KEA DHCPv4 service.
+
+```bash
+systemctl disable --now kea-dhcp4-server.service
+systemctl mask kea-dhcp4-server.service
+```
+
+Remove the IPv4 address on the internal interface (example: eth1).
+
+Open the netplan file.
+
+```bash
+nano /etc/netplan/<YAML file>
+```
+
+Example:
+
+```bash
+nano /etc/netplan/50-cloud-init.yaml
+```
+
+Remove the IPv4 addresses from the internal interface in netplan file. 
+TIP  : Comment the line and create a modified copy of the line without the IPv4 addresses.
+TIP2 : Create a second copy of the dual-stack lines to and remove the IPv6 addresses to create an IPv4-only version of the addresses lines.
+
+Example:
+
+```bash
+network:
+  renderer: networkd
+  ethernets:
+    eth0:
+      dhcp4: true
+    eth1:
+#     Dual-stack
+#      addresses: [10.1.0.1/24, fd85:8b47:e1fe:1b45::1/64]
+#     IP4-only stack
+#      addresses: [10.1.0.1/24]
+#     IPv6-only stack
+      addresses: [fd85:8b47:e1fe:1b45::1/64]
+      nameservers:
+#     Dual-stack
+#        addresses: [192.168.1.60, 192.168.3.61, 2600:1700:5aa0:30cf::60, 2600:1700:5aa0:30ce::61]
+#     IP4-only stack
+#        addresses: [192.168.1.60, 192.168.3.61]
+#     IPv6-only stack
+        addresses: [2600:1700:5aa0:30cf::60, 2600:1700:5aa0:30ce::61]
+  version: 2
+```
+
+Reboot the lab clients to reset the network configuration.
+
+
+## Re-enable IPv4
+
+Enable the KEA DHCPv4 service.
+
+```bash
+systemctl unmask kea-dhcp4-server.service
+systemctl enable --now kea-dhcp4-server.service
+```
+
+Open the netplan file
+
+```bash
+nano /etc/netplan/<YAML file>
+```
+
+Example:
+
+```bash
+nano /etc/netplan/50-cloud-init.yaml
+```
+
+Open the netplan file and add the IPv4 address back to the Internal interface (example: eth1). Or, comment/uncomment the approritate lines to enable dual-stack again.
+
+Reboot the lab clients to reset the network configuration.
 
 
 ### [OPTIONAL] Setup certbot to generate certificates needed for DoH.
