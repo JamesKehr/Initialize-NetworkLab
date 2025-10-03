@@ -1,5 +1,8 @@
 # How to setup an Ubuntu gateway for Windows network admins
 
+> [!WARNING]
+> These are NOT production-grade instructions. These steps are meant only to be used in a lab-like environment!
+
 Items covered in this doc:
 - Basic Ubuntu (Linux) multi-homed network.
 - NAT4 (MASQUERADE).
@@ -453,7 +456,8 @@ sysctl -p
 Enable IPv6 MASQUERADE 
 
 ```sh
-ip6tables -t nat -A POSTROUTING -j MASQUERADE
+ip6tables -t nat -A POSTROUTING -j MASQUERADE -o eth0
+ip6tables -t nat -A POSTROUTING -j MASQUERADE -o eth1
 ```
 
 ### Use radvd to advertise the IPv6 gateway
