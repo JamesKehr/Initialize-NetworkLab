@@ -16,7 +16,7 @@ Optional components:
   - KEA DHCPv6
   - BIND9 DNS server with DNS64 (NAT64 ready)
   - radvd for Router Advertisements to obtain the IPv6 gateway
-  - tayga NAT64
+  - jool NAT64
 
 Future:
 - BIND9 DNS over HTTPS server
