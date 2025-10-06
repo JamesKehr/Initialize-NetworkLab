@@ -1083,6 +1083,8 @@ Open the netplan file and add the IPv4 address back to the Internal interface (e
 
 Reboot the lab clients to reset the network configuration.
 
+Reboot the gateway if the DHCP server is not handing out IPv4 addresses.
+
 
 ### [OPTIONAL] Setup certbot to generate certificates needed for DoH.
 
