@@ -462,6 +462,7 @@ Enable IPv6 MASQUERADE
 ```sh
 ip6tables -t nat -A POSTROUTING -j MASQUERADE -o eth0
 ip6tables -t nat -A POSTROUTING -j MASQUERADE -o eth1
+ip6tables-save > /etc/iptables/rules.v6
 ```
 
 ### Use radvd to advertise the IPv6 gateway
