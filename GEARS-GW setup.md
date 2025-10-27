@@ -69,7 +69,10 @@ Install required components for the lab. You can copy/paste the commands when us
 - mDNS will not work if the gateway is behind a Default Switch, it wil only work if the gateway is attached to an external vmSwitch.
 
 ```bash
-snap install mdns
+sudo apt install avahi-daemon
+sudo systemctl start avahi-daemon
+sudo systemctl enable avahi-daemon
+sudo reboot
 ```
 
 [Optional] Example ssh command with mDNS where the username is `gw` and the hostname is `gateway`.
